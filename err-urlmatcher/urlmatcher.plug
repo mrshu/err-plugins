@@ -1,0 +1,9 @@
+[Core]
+Name = UrlMatcher 
+Module = urlmatcher
+
+[Documentation]
+Description = Get a preview of any link pasted to your chatroom.
+
+[Python]
+Version = 2+
