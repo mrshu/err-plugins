@@ -1,2 +1,3 @@
 readability-lxml
 requests
+metadata_parser
