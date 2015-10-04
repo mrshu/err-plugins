@@ -1,5 +1,6 @@
 from readability.readability import Document
 import requests
+from metadata_parser import MetadataParser
 import re
 
 from errbot import re_botcmd, BotPlugin
@@ -9,7 +10,7 @@ from itertools import chain
 # see https://github.com/mrshu/brutal-plugins/issues/38
 URL_REGEX = '((:?https?|ftp)://[^\s/$.?#].[^\s\x0f]*)'
 TAG_RE = re.compile(r'<[^>]+>')
-WHITESPACE_RE = re.compile(r'\s\s+')
+WHITESPACE_RE = re.compile(r'\s+')
 
 CONFIG_TEMPLATE = {
     'DOC_MAX_LEN': 75,
@@ -30,6 +31,12 @@ class UrlMatcher(BotPlugin):
     def get_configuration_template(self):
         return CONFIG_TEMPLATE
 
+    def text_cleanup(self, text):
+        text = TAG_RE.sub('', text)
+        text = WHITESPACE_RE.sub(' ', text)
+        text = text.replace('&#13;', '')
+        return text
+
     @re_botcmd(pattern=URL_REGEX, prefixed=False)
     def url_matcher(self, msg, match):
         url = match.group(0)
@@ -44,14 +51,27 @@ class UrlMatcher(BotPlugin):
 
         html = requests.get(url).text
         readable_article = Document(html).summary()
-        readable_article = TAG_RE.sub('', readable_article)
-        readable_article = WHITESPACE_RE.sub(' ', readable_article)
-        readable_article = readable_article.replace('\n', ' ')
-        readable_article = readable_article.replace('&#13;', '')
+        readable_article = self.text_cleanup(readable_article)
 
         if len(readable_article) > max_len:
             readable_article = readable_article[:max_len] + '...'
 
         readable_title = Document(html).short_title()
 
-        return "> " + url + " > " + readable_title + " > " + readable_article
+        page = MetadataParser(html=html)
+        readable_description = page.get_metadata('description')
+
+        if readable_description is None:
+            readable_description = ''
+
+        readable_description = self.text_cleanup(readable_description)
+
+        description = ''
+        if len(readable_description) > len(readable_article):
+            description = readable_description
+        else:
+            description = readable_article
+
+        return "~> {}\n~> {}\n~> {}".format(url,
+                                            readable_title,
+                                            description)
