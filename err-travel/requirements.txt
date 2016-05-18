@@ -1,0 +1,4 @@
+readability-lxml
+requests
+cpsk
+imhdsk

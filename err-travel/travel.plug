@@ -1,0 +1,9 @@
+[Core]
+Name = Travel
+Module = travel
+
+[Documentation]
+Description = Search for means of transportation
+
+[Python]
+Version = 2+
